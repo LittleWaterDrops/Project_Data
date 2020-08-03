@@ -156,10 +156,9 @@ export class Collect extends Component {
 
   componentDidMount(){
     // 앱 재실행마다 데이터 초기화
-    // Realm.deleteFile({schema:[AccSchema,MagSchema,GyroSchema,XyzSchema,BeaconSchema,BeaconDataSchema,WifiSchema,WifiDataSchema]});
+    Realm.deleteFile({schema:[AccSchema,MagSchema,GyroSchema,XyzSchema,BeaconSchema,BeaconDataSchema,WifiSchema,WifiDataSchema]});
     
-    // 스플레시 스크린 끄기
-
+    console.log(moment(-147));
     // console.log(Realm.defaultPath);
     // Realm.open({schema:[AccSchema,XyzSchema]})
   }
@@ -225,6 +224,7 @@ export class Collect extends Component {
           let accTime = new Date().getTime();
           let accSensor =realm.create('AccSensor', {
             accDate: moment(accTime).format('YYYY-MM-DDTHH:mm:ss.SSS'),
+            accInterval: moment(accTime -  recordStartTime).format('ss.S'),
             accXyz: [{x:this.state.accState.x, y:this.state.accState.y, z:this.state.accState.z}],
             degree: this.angFinal,
           });
@@ -242,6 +242,7 @@ export class Collect extends Component {
           magTime = new Date().getTime();
           let magSensor =realm.create('MagSensor', {
             magDate: moment(magTime).format('YYYY-MM-DDTHH:mm:ss.SSS'),
+            magInterval: moment(magTime -  recordStartTime).format('ss.S'),
             magXyz: [{x:this.state.magState.x, y:this.state.magState.y, z:this.state.magState.z}],
             degree: this.angFinal,
           });
@@ -268,6 +269,7 @@ export class Collect extends Component {
           gyroTime = new Date().getTime();
           let gyroSensor =realm.create('GyroSensor', {
             gyroDate: moment(gyroTime).format('YYYY-MM-DDTHH:mm:ss.SSS'),
+            gyroInterval: moment(gyroTime -  recordStartTime).format('ss.S'),
             gyroXyz: [{x:this.state.gyroState.x, y:this.state.gyroState.y, z:this.state.gyroState.z}],
             degree: this.angFinal,
           });
@@ -293,6 +295,7 @@ export class Collect extends Component {
               realm.write(() => {
                 let beacon =realm.create('Beacon', {
                   beaconDate: moment(beaconTime).format('YYYY-MM-DDTHH:mm:ss.SSS'),
+                  beaconInterval: moment(beaconTime -  recordStartTime).format('ss.S'),
                   beaconData: [{
                     distance: data.beacons[i].distance, 
                     major: data.beacons[i].major, 
@@ -332,6 +335,7 @@ export class Collect extends Component {
             realm.write(() => {
               let wifi =realm.create('Wifi', {
                 wifiDate: moment(wifiTime).format('YYYY-MM-DDTHH:mm:ss.SSS'),
+                wifiInterval: moment(wifiTime -  recordStartTime).format('ss.S'),
                 wifiData: [{
                   BSSID:wifiArray[countWifi].BSSID, 
                   SSID:wifiArray[countWifi].SSID,
@@ -395,22 +399,21 @@ export class Collect extends Component {
 
   // 시간 순으로 정렬된 파일 생성 관련
   createSortedFile = (name, values) =>{
-        var realName = name.split('.');  
+    var realName = name.split('.');  
+    
+    // csv로 변환
+    const headerString = 'Index,Action,TimeStamp,Object,// Reference is Action\n';
+    const rowString = values;
+    const csvString = `${headerString}${rowString}`;
+    const pathToWrite = `/mnt/sdcard/Android/data/com.project_data/files/Sorted_${realName[0]}.csv`;
 
-        // csv로 변환
-        const headerString = 'Index,Action,TimeStamp,Object,// Reference is Action\n';
-        const rowString = values;
-        const csvString = `${headerString}${rowString}`;
-        const pathToWrite = `/mnt/sdcard/Android/data/com.project_data/files/Sorted_${realName[0]}.csv`;
-
-        RNFetchBlob.fs
-        .createFile(pathToWrite, csvString, 'utf8')
-        .then(() => {
-          console.log(`csv file create complete! :Sorted_${realName[0]}.csv`);
-          alert(`csv file create complete! :Sorted_${realName[0]}.csv`);
-        })
-        .catch(error => console.log(error),alert("Error : file already exist!"));
-
+    RNFetchBlob.fs
+    .createFile(pathToWrite, csvString, 'utf8')
+    .then(() => {
+      console.log(`csv file create complete! :Sorted_${realName[0]}.csv`);
+      alert(`csv file create complete! :Sorted_${realName[0]}.csv`);
+    })
+    .catch(error => console.log(error),alert("Error : file already exist!"));
   }
 
   extractSortedFile = () => {
@@ -534,7 +537,7 @@ export class Collect extends Component {
           })
           .catch(function() {
             console.log("Promise Rejected");  
-            alert.log("Promise Rejected");                    
+            alert("Promise Rejected");                    
           })
 
         }

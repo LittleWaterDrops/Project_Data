@@ -31,6 +31,7 @@ export const AccSchema = {
     name: 'AccSensor',
     properties:{
         accDate: 'string',
+        accInterval: 'string',
         accXyz: {type:'list', objectType: 'Xyz'},
         degree: 'double',
     }
@@ -39,6 +40,7 @@ export const MagSchema = {
     name: 'MagSensor',
     properties:{
         magDate: 'string',
+        magInterval: 'string',
         magXyz:{type:'list', objectType: 'Xyz'},
         degree: 'double',
     }
@@ -47,6 +49,7 @@ export const GyroSchema = {
     name: 'GyroSensor',
     properties:{
         gyroDate: 'string',
+        gyroInterval: 'string',
         gyroXyz:{type:'list', objectType: 'Xyz'},
         degree: 'double',
     }
@@ -63,6 +66,7 @@ export const BeaconSchema = {
     name: 'Beacon',
     properties:{
         beaconDate: 'string',
+        beaconInterval: 'string',
         beaconData: {type:'list', objectType:'BeaconData'}
     }
 }
@@ -81,6 +85,7 @@ export const WifiSchema = {
     name: 'Wifi',
     properties:{
         wifiDate: 'string',
+        wifiInterval: 'string',
         wifiData: {type: 'list', objectType: 'WifiData'},
     }
 }
