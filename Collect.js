@@ -32,15 +32,10 @@ import {
   BeaconDataSchema,
   WifiSchema,
   WifiDataSchema,
-  BleSchema,
-  BleDataSchema,
-  BleAdvertisingSchema,
-  BleManufacturerdataSchema,
 } from './test1/schema.js'
 import Beacons from 'react-native-beacons-manager'
 import wifi from 'react-native-android-wifi';
 import CameraRoll from "@react-native-community/cameraroll";
-import BleManager from "react-native-ble-manager";
 import moment from 'moment';
 import Realm from 'realm';
 import RNFetchBlob from 'react-native-fetch-blob';
@@ -132,12 +127,9 @@ let pastBeaconNumber;
 let nowBeaconNumber;
 let pastWifiNumber;
 let nowWifiNumber;
-let pastBleNumber;
-let nowBleNumber;
 
 
-
-export default class Collect extends Component {
+export class Collect extends Component {
   constructor(props) {
     super(props);
     this.state = {
@@ -164,7 +156,7 @@ export default class Collect extends Component {
 
   componentDidMount(){
     // 앱 재실행마다 데이터 초기화
-    // Realm.deleteFile({schema:[AccSchema,MagSchema,GyroSchema,XyzSchema,BeaconSchema,BeaconDataSchema,WifiSchema,WifiDataSchema,BleSchema,BleDataSchema,BleAdvertisingSchema,BleManufacturerdataSchema]});
+    // Realm.deleteFile({schema:[AccSchema,MagSchema,GyroSchema,XyzSchema,BeaconSchema,BeaconDataSchema,WifiSchema,WifiDataSchema]});
     
     // 스플레시 스크린 끄기
 
@@ -180,7 +172,6 @@ export default class Collect extends Component {
     this.checkSensor();
     this.checkBeacon();
     this.checkWifi();
-    this.checkBle();
   }
 
   stopCheckData(){
@@ -197,10 +188,6 @@ export default class Collect extends Component {
     // 와이파이 측정 비활성
     clearInterval(this.wifiInterval);
 
-    // 블루투스 측정 비활성
-    BleManager.stopScan();
-    this.BleManagerDiscoverPeripheral.remove();
-
     // 열려있는 realm 닫아줌
     const {realm} = this.state;
     if (realm !== null && !realm.isClosed) {
@@ -210,9 +197,9 @@ export default class Collect extends Component {
 
   checkSensor(){
     // 센서 측정 간격 500ms
-    setUpdateIntervalForType(SensorTypes.accelerometer,500);
-    setUpdateIntervalForType(SensorTypes.magnetometer,500);
-    setUpdateIntervalForType(SensorTypes.gyroscope,500);
+    setUpdateIntervalForType(SensorTypes.accelerometer,250);
+    setUpdateIntervalForType(SensorTypes.magnetometer,250);
+    setUpdateIntervalForType(SensorTypes.gyroscope,250);
 
     // 센서 측정 및 상태 업데이트
     let angleTime = [];
@@ -222,6 +209,15 @@ export default class Collect extends Component {
     // 가속도, 지자기, 자이로 및 각 측정
     accSubscription = accelerometer.subscribe(({ x, y, z }) =>{ 
       this.setState({accState: {x, y, z}});
+
+      this.angFinal = startAngle;
+      angleTime.push(new Date().getTime());  
+      if (this.state.accState != null && this.state.gyroState != null && angleTime.length > 2) {
+        calculateAngle(this.state.accState, this.state.gyroState, angleTime, this.angFinal)
+        .then((res) => {
+        this.angFinal = res.degree;
+        })
+      }
 
       Realm.open({schema:[AccSchema,XyzSchema]})
       .then(realm => {
@@ -285,7 +281,7 @@ export default class Collect extends Component {
   checkBeacon(){
     // 비콘 데이터 수집
       Beacons.detectIBeacons();
-      Beacons.setForegroundScanPeriod(500);
+      Beacons.setForegroundScanPeriod(250);
       Beacons.startRangingBeaconsInRegion(region)
       .then(() => {
         this.beaconsDidRange = DeviceEventEmitter.addListener('beaconsDidRange', (data) => {
@@ -379,51 +375,6 @@ export default class Collect extends Component {
     */
   }
 
-  checkBle(){
-    // 블루투스 관련
-    BleManager.start();
-    this.scanBle();
-  }
-
-  scanBle =() => {
-    // 블루투스 스캔
-    BleManager.scan([], 0)
-    .then(() => {
-      this.BleManagerDiscoverPeripheral = DeviceEventEmitter.addListener('BleManagerDiscoverPeripheral', (data) => {
-        if(data.name == null){
-          data.name = 'null';
-        }
-
-        Realm.open({schema:[BleSchema,BleDataSchema,BleAdvertisingSchema,BleManufacturerdataSchema]})
-        .then(realm => {
-          realm.write(() => {
-            let bleTime = new Date().getTime();
-            let ble =realm.create('Ble', {
-              bleDate: moment(bleTime).format('YYYY-MM-DDTHH:mm:ss.SSS'),
-              bleData: [{
-                advertising: [{
-                  isConnectable: data.advertising.isConnectable,
-                  manufacturerData: [{
-                    CDVType: data.advertising.manufacturerData.CDVType,
-                    bytes: JSON.stringify(data.advertising.manufacturerData.bytes),
-                    data: data.advertising.manufacturerData.data,
-                  }],
-                  serviceData: JSON.stringify(data.advertising.serviceData),
-                  serviceUUIDs: JSON.stringify(data.advertising.serviceUUIDs),
-                  txPowerLevel: data.advertising.txPowerLevel,
-                }],
-                id: data.id,
-                name: data.name,
-                rssi: data.rssi,
-              }],
-            });
-          });  
-          realm.close();
-        });
-      })
-    })
-  }
-
   // csv 파일 생성 관련
   createDataFile = (name, values) =>{
     var realName = name.split('.');   
@@ -432,14 +383,43 @@ export default class Collect extends Component {
     const headerString = 'Index,Action,TimeStamp,Object,// Reference is Action\n';
     const rowString = values;
     const csvString = `${headerString}${rowString}`;
-    const pathToWrite = `/mnt/sdcard/Android/data/com.project_data/files/${realName[0]}Data.csv`;
+    const pathToWrite = `/mnt/sdcard/Android/data/com.project_data/files/Data_${realName[0]}.csv`;
 
     RNFetchBlob.fs
     .createFile(pathToWrite, csvString, 'utf8')
     .then(() => {
-      console.log(`csv file create complete! :${realName[0]}Data.csv`);
+      console.log(`csv file create complete! :Data_${realName[0]}.csv`);
     })
     .catch(error => console.error(error));  
+  }
+
+  // 시간 순으로 정렬된 파일 생성 관련
+  createSortedFile = (name, values) =>{
+        var realName = name.split('.');  
+
+        // csv로 변환
+        const headerString = 'Index,Action,TimeStamp,Object,// Reference is Action\n';
+        const rowString = values;
+        const csvString = `${headerString}${rowString}`;
+        const pathToWrite = `/mnt/sdcard/Android/data/com.project_data/files/Sorted_${realName[0]}.csv`;
+
+        RNFetchBlob.fs
+        .createFile(pathToWrite, csvString, 'utf8')
+        .then(() => {
+          console.log(`csv file create complete! :Sorted_${realName[0]}.csv`);
+          alert(`csv file create complete! :Sorted_${realName[0]}.csv`);
+        })
+        .catch(error => console.log(error),alert("Error : file already exist!"));
+
+  }
+
+  extractSortedFile = () => {
+    Realm.open({schema:[PastNumberSchema,SaveSchema,CollectedDataDataSchema,AccSchema,MagSchema,GyroSchema,XyzSchema,BeaconSchema,BeaconDataSchema,WifiSchema,WifiDataSchema]})
+    .then(realm => {
+      var movieName = realm.objects('Save')[realm.objects('Save').length-1].recordName;
+      this.createSortedFile(movieName,this.sortByDate(this.modifyToCsv(JSON.stringify(realm.objects('Save')[realm.objects('Save').length-1]))));
+      realm.close();
+    });
   }
 
   // csv파일에 저장할 데이터 다듬기
@@ -459,7 +439,6 @@ export default class Collect extends Component {
     result = result.replace('}},gyroData,{','\n');
     result = result.replace('}},beaconData,{','\n');
     result = result.replace('}},wifiData,{','\n');
-    result = result.replace('},bleData,{','\n');
     result = result.replace(/}},degree/g,',degree');
     result = result.replace(/}},serviceData/g,',serviceData');
     result = result.replace(/}},serviceUUIDs/g,',serviceUUIDs');
@@ -470,8 +449,7 @@ export default class Collect extends Component {
     result = result.replace(/}/g,'');
     result = result.replace(/{/g,'');
 
-    // 데이터를 시간 순으로 정렬
-    result = this.sortByDate(result);
+
     return result;
   }
 
@@ -552,9 +530,11 @@ export default class Collect extends Component {
           CameraRoll.save(recordData.uri,{type:'video',album: 'Project_Data'})
           .then(() => {
             console.log("Movie Recorded!");
+            alert("Movie Recorded!");
           })
           .catch(function() {
-            console.log("Promise Rejected");           
+            console.log("Promise Rejected");  
+            alert.log("Promise Rejected");                    
           })
 
         }
@@ -566,7 +546,7 @@ export default class Collect extends Component {
 
   saveData =(movieName) =>{
     // 데이터 저장 및 파일 생성
-    Realm.open({schema:[PastNumberSchema,SaveSchema,CollectedDataDataSchema,AccSchema,MagSchema,GyroSchema,XyzSchema,BeaconSchema,BeaconDataSchema,WifiSchema,WifiDataSchema,BleSchema,BleDataSchema,BleAdvertisingSchema,BleManufacturerdataSchema]})
+    Realm.open({schema:[PastNumberSchema,SaveSchema,CollectedDataDataSchema,AccSchema,MagSchema,GyroSchema,XyzSchema,BeaconSchema,BeaconDataSchema,WifiSchema,WifiDataSchema]})
     .then(realm => {
       realm.write(() => {
         recordEndTime = new Date().getTime();
@@ -577,7 +557,6 @@ export default class Collect extends Component {
         pastGyroNumber = realm.objects('PastNumber')[realm.objects('PastNumber').length - 1].pastGyroNumberSave;
         pastBeaconNumber = realm.objects('PastNumber')[realm.objects('PastNumber').length - 1].pastBeaconSave;
         pastWifiNumber = realm.objects('PastNumber')[realm.objects('PastNumber').length - 1].pastWifiSave;
-        pastBleNumber = realm.objects('PastNumber')[realm.objects('PastNumber').length - 1].pastBleSave;
 
 
         //현재까지 측정한 각 데이터들 길이 저장
@@ -586,7 +565,6 @@ export default class Collect extends Component {
         nowGyroNumber = realm.objects('GyroSensor').length;
         nowBeaconNumber = realm.objects('Beacon').length;
         nowWifiNumber = realm.objects('Wifi').length;
-        nowBleNumber = realm.objects('Ble').length;
 
         // (Object)Temp는 잠시 수집한 데이터를 저장하는 배열
         let accTemp = [];
@@ -594,7 +572,6 @@ export default class Collect extends Component {
         let gyroTemp = [];
         let beaconTemp = [];
         let wifiTemp = [];
-        let bleTemp = [];
 
         // 수집한 데이터를 임시 배열에 저장
         for(let i= pastAccNumber;i<nowAccNumber;i++){
@@ -612,9 +589,6 @@ export default class Collect extends Component {
         for(let i= pastWifiNumber;i<nowWifiNumber;i++){
           wifiTemp.push(realm.objects('Wifi')[i]);
         }    
-        for(let i= pastBleNumber;i<nowBleNumber;i++){
-          bleTemp.push(realm.objects('Ble')[i]);
-        }    
 
         // 데이터 저장
         let save = realm.create('Save', {
@@ -627,7 +601,6 @@ export default class Collect extends Component {
             gyroData: gyroTemp,
             beaconData: beaconTemp,
             wifiData: wifiTemp,
-            bleData: bleTemp,
           }],
         });
       })
@@ -641,7 +614,6 @@ export default class Collect extends Component {
       console.log("Gyro: " + pastGyroNumber + " / " + nowGyroNumber);
       console.log("Beacon: " + pastBeaconNumber + " / " + nowBeaconNumber);
       console.log("Wifi: " + pastWifiNumber + " / " + nowWifiNumber);
-      console.log("Ble: " + pastBleNumber + " / " + nowBleNumber);
       
       realm.close();
     })
@@ -649,7 +621,7 @@ export default class Collect extends Component {
 
   checkPastNumber(){
     //직전 실행까지 측정한 각 데이터들 길이를 데이터베이스에 저장
-    Realm.open({schema:[PastNumberSchema,SaveSchema,CollectedDataDataSchema,AccSchema,MagSchema,GyroSchema,XyzSchema,BeaconSchema,BeaconDataSchema,WifiSchema,WifiDataSchema,BleSchema,BleDataSchema,BleAdvertisingSchema,BleManufacturerdataSchema]})
+    Realm.open({schema:[PastNumberSchema,SaveSchema,CollectedDataDataSchema,AccSchema,MagSchema,GyroSchema,XyzSchema,BeaconSchema,BeaconDataSchema,WifiSchema,WifiDataSchema]})
     .then(realm => {
       realm.write(() => {
         let PastNumber = realm.create('PastNumber', {
@@ -658,7 +630,6 @@ export default class Collect extends Component {
           pastGyroNumberSave: realm.objects('GyroSensor').length,
           pastBeaconSave: realm.objects('Beacon').length,
           pastWifiSave: realm.objects('Wifi').length,
-          pastBleSave: realm.objects('Ble').length,
         })
       })
       realm.close();
@@ -728,24 +699,19 @@ export default class Collect extends Component {
   componentWillUnmount() {
     
   }
-  
+
   render() {
     
     return (
     <View style={styles.container}>
+      <Text style={styles.warningText}>
+      주의: 영상종료 버튼은 단 한 번만 누르고 기다리시오. 녹화완료 알람이 뜨기 전까지 강제종료하지 마시오.
+      </Text>
       {this.renderCamera()}
-      <Value name="Degree" value={this.angFinal} /> 
     </View>    
     );
   }
 }
-
-const Value = ({name, value}) => (
-  <View style={styles.valueContainer}>
-    <Text style={styles.valueName}>{name}:</Text>
-    <Text style={styles.valueValue}>{new String(value).substr(0, 8)}</Text>
-  </View>
-)
 
 const styles = StyleSheet.create({
   container: {
@@ -754,6 +720,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#000000',
+  },
+  warningText:{
+    width: 350,
+    fontSize: 15,
+    fontWeight: 'bold',
+    color: '#01DFD7',
   },
   flipButton: {
     flex: 0.3,
@@ -791,3 +763,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
   },
 });
+
+const collectClass = new Collect();
+export default collectClass;

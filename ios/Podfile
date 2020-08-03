@@ -99,6 +99,8 @@ target 'Project_Data' do
 
   pod 'react-native-splash-screen', :path => '../node_modules/react-native-splash-screen'
 
+  pod 'RNReanimated', :path => '../node_modules/react-native-reanimated'
+
   target 'Project_DataTests' do
     inherit! :complete
     # Pods for testing
