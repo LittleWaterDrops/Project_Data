@@ -56,10 +56,10 @@ function HomeScreen({ navigation }) {
         alignSelf: 'center',
         backgroundColor: '#01DFD7',
       }]}
-      onPress={() => navigation.navigate('Temp 2')} 
+      onPress={() => collectClass.extractTxtFile()} 
       >
       <Text style={styles.buttonText}> 
-      Temp 2 
+      Extract txt file
       </Text>
     </TouchableOpacity>
     <View style={styles.bottom}>
@@ -78,7 +78,11 @@ function ExtractSortedData() {
   collectClass.extractSortedFile();
 }
 
-function Temp2({ navigation }) {
+function ExtractTxtFile() {
+  collectClass.extractTxtFile();
+}
+
+function Temp({ navigation }) {
   return (
     <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#000000' }}>
     <Text style={styles.content}>
@@ -103,7 +107,7 @@ function MyStack() {
       <Stack.Screen name=" " component={HomeScreen} />
       <Stack.Screen name="Collect Data" component={CollectData} />
       <Stack.Screen name="Extract sorted data" component={ExtractSortedData} />
-      <Stack.Screen name="Temp 2" component={Temp2} />
+      <Stack.Screen name="Extract txt file" component={ExtractTxtFile} />
     </Stack.Navigator>
   );
 }

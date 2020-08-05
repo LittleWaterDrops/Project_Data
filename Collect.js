@@ -482,6 +482,48 @@ export class Collect extends Component {
     afterSortData = afterSortData.replace(/"/g,'');
     return afterSortData;
   }
+  
+  // txt로 출력할 데이터 (추후에 사용 위해 만들어놓음)
+  forTxt = (data) => {
+    let datatemp = data.split('\n');
+    var removedUselessData = datatemp.splice(0,1);
+    removedUselessData = removedUselessData.splice(1,1);
+    removedUselessData = JSON.stringify(removedUselessData);
+    afterSortData = afterSortData.replace(/",record/g,',record');
+    removedUselessData = removedUselessData.replace(/",/g,'\n');
+    removedUselessData = removedUselessData.replace(/\[/g,'');
+    removedUselessData = removedUselessData.replace(/\]/g,'');
+    removedUselessData = removedUselessData.replace(/"/g,'');
+    removedUselessData = removedUselessData.replace(/,/g,':');
+    return removedUselessData;
+  }
+
+    // txt 파일 생성 관련
+    createTxtFile = (name, values) =>{
+      var realName = name.split('.');  
+      
+      // txt로 변환
+      const rowString = values;
+      const csvString = `${rowString}`;
+      const pathToWrite = `/mnt/sdcard/Android/data/com.project_data/files/${realName[0]}.txt`;
+  
+      RNFetchBlob.fs
+      .createFile(pathToWrite, csvString, 'utf8')
+      .then(() => {
+        console.log(`txt file create complete! :${realName[0]}.txt`);
+        alert(`txt file create complete! :${realName[0]}.txt`);
+      })
+      .catch(error => console.log(error),alert("Error : file already exist!"));
+    }
+  
+    extractTxtFile = () => {
+      Realm.open({schema:[PastNumberSchema,SaveSchema,CollectedDataDataSchema,AccSchema,MagSchema,GyroSchema,XyzSchema,BeaconSchema,BeaconDataSchema,WifiSchema,WifiDataSchema]})
+      .then(realm => {
+        var movieName = realm.objects('Save')[realm.objects('Save').length-1].recordName;
+        this.createSortedFile(movieName,this.forTxt(this.modifyToCsv(JSON.stringify(realm.objects('Save')[realm.objects('Save').length-1]))));
+        realm.close();
+      });
+    }
 
   // 카메라 녹화 관련////////////////////////////////////////////////////////////////////
   getRatios = async function() {
