@@ -156,9 +156,8 @@ export class Collect extends Component {
 
   componentDidMount(){
     // 앱 재실행마다 데이터 초기화
-    Realm.deleteFile({schema:[AccSchema,MagSchema,GyroSchema,XyzSchema,BeaconSchema,BeaconDataSchema,WifiSchema,WifiDataSchema]});
-    
-    console.log(moment(-147));
+    // Realm.deleteFile({schema:[AccSchema,MagSchema,GyroSchema,XyzSchema,BeaconSchema,BeaconDataSchema,WifiSchema,WifiDataSchema]});
+  
     // console.log(Realm.defaultPath);
     // Realm.open({schema:[AccSchema,XyzSchema]})
   }
@@ -224,7 +223,7 @@ export class Collect extends Component {
           let accTime = new Date().getTime();
           let accSensor =realm.create('AccSensor', {
             accDate: moment(accTime).format('YYYY-MM-DDTHH:mm:ss.SSS'),
-            accInterval: moment(accTime -  recordStartTime).format('ss.S'),
+            accInterval: JSON.stringify(((accTime -  recordStartTime) / 1000).toFixed(1)),
             accXyz: [{x:this.state.accState.x, y:this.state.accState.y, z:this.state.accState.z}],
             degree: this.angFinal,
           });
@@ -242,7 +241,7 @@ export class Collect extends Component {
           magTime = new Date().getTime();
           let magSensor =realm.create('MagSensor', {
             magDate: moment(magTime).format('YYYY-MM-DDTHH:mm:ss.SSS'),
-            magInterval: moment(magTime -  recordStartTime).format('ss.S'),
+            magInterval: JSON.stringify(((magTime -  recordStartTime) / 1000).toFixed(1)),
             magXyz: [{x:this.state.magState.x, y:this.state.magState.y, z:this.state.magState.z}],
             degree: this.angFinal,
           });
@@ -269,7 +268,7 @@ export class Collect extends Component {
           gyroTime = new Date().getTime();
           let gyroSensor =realm.create('GyroSensor', {
             gyroDate: moment(gyroTime).format('YYYY-MM-DDTHH:mm:ss.SSS'),
-            gyroInterval: moment(gyroTime -  recordStartTime).format('ss.S'),
+            gyroInterval: JSON.stringify(((gyroTime -  recordStartTime) / 1000).toFixed(1)),
             gyroXyz: [{x:this.state.gyroState.x, y:this.state.gyroState.y, z:this.state.gyroState.z}],
             degree: this.angFinal,
           });
@@ -295,7 +294,7 @@ export class Collect extends Component {
               realm.write(() => {
                 let beacon =realm.create('Beacon', {
                   beaconDate: moment(beaconTime).format('YYYY-MM-DDTHH:mm:ss.SSS'),
-                  beaconInterval: moment(beaconTime -  recordStartTime).format('ss.S'),
+                  beaconInterval: JSON.stringify(((beaconTime -  recordStartTime) / 1000).toFixed(1)),
                   beaconData: [{
                     distance: data.beacons[i].distance, 
                     major: data.beacons[i].major, 
@@ -335,7 +334,7 @@ export class Collect extends Component {
             realm.write(() => {
               let wifi =realm.create('Wifi', {
                 wifiDate: moment(wifiTime).format('YYYY-MM-DDTHH:mm:ss.SSS'),
-                wifiInterval: moment(wifiTime -  recordStartTime).format('ss.S'),
+                wifiInterval: JSON.stringify(((wifiTime -  recordStartTime) / 1000).toFixed(1)),
                 wifiData: [{
                   BSSID:wifiArray[countWifi].BSSID, 
                   SSID:wifiArray[countWifi].SSID,
@@ -451,7 +450,7 @@ export class Collect extends Component {
     result = result.replace(/},/g,'\n');
     result = result.replace(/}/g,'');
     result = result.replace(/{/g,'');
-
+    result = result.replace(/\\/g,'');
 
     return result;
   }
@@ -486,10 +485,8 @@ export class Collect extends Component {
   // txt로 출력할 데이터 (추후에 사용 위해 만들어놓음)
   forTxt = (data) => {
     let datatemp = data.split('\n');
-    var removedUselessData = datatemp.splice(0,1);
-    removedUselessData = removedUselessData.splice(1,1);
-    removedUselessData = JSON.stringify(removedUselessData);
-    afterSortData = afterSortData.replace(/",record/g,',record');
+    removedUselessData = JSON.stringify(datatemp);
+    removedUselessData = removedUselessData.replace(/",record/g,',record');
     removedUselessData = removedUselessData.replace(/",/g,'\n');
     removedUselessData = removedUselessData.replace(/\[/g,'');
     removedUselessData = removedUselessData.replace(/\]/g,'');
@@ -520,7 +517,7 @@ export class Collect extends Component {
       Realm.open({schema:[PastNumberSchema,SaveSchema,CollectedDataDataSchema,AccSchema,MagSchema,GyroSchema,XyzSchema,BeaconSchema,BeaconDataSchema,WifiSchema,WifiDataSchema]})
       .then(realm => {
         var movieName = realm.objects('Save')[realm.objects('Save').length-1].recordName;
-        this.createSortedFile(movieName,this.forTxt(this.modifyToCsv(JSON.stringify(realm.objects('Save')[realm.objects('Save').length-1]))));
+        this.createTxtFile(movieName,this.forTxt(this.modifyToCsv(JSON.stringify(realm.objects('Save')[realm.objects('Save').length-1]))));
         realm.close();
       });
     }
