@@ -6,7 +6,6 @@ import {
     StyleSheet,
     Text,
     View,
-    Button,
     TouchableOpacity,
 } from 'react-native';
 import SplashScreen from 'react-native-splash-screen';
