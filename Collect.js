@@ -125,8 +125,10 @@ export class Collect extends Component {
 
     //앱 최초 실행 관련
     const isFirstLaunch = await checkFirstLaunch();
-    console.log('[App() check]: ' + JSON.stringify(isFirstLaunch));
+    console.log('Is this first launch? : ' + JSON.stringify(isFirstLaunch));
     if(isFirstLaunch){
+      console.log( ' This is first launch.'+ isFirstLaunch.toString() );
+
       // 안드로이드 권한 관련 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
       if (Platform.OS === 'android') {                                                                                                  ///
         const granted = PermissionsAndroid.requestMultiple(                                                                             ///
@@ -179,7 +181,6 @@ export class Collect extends Component {
         });                                                                                                                             ///
       }                                                                                                                                 ///
       /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-      console.log( ' [App()] : This is the first Launch.'+ isFirstLaunch.toString() );
       this.setState({isFirstLaunch: true});
     }
   }
