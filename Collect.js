@@ -8,7 +8,7 @@ import {
   StyleSheet,
   Text,
   View,
-  TouchableOpacity
+  TouchableOpacity,
 } from 'react-native';
 import { 
   accelerometer, 
@@ -39,45 +39,7 @@ import CameraRoll from "@react-native-community/cameraroll";
 import moment from 'moment';
 import Realm from 'realm';
 import RNFetchBlob from 'react-native-fetch-blob';
-// 안드로이드 권한 관련 /////////////////////////////////////////////////////////////////////////////////////////////////////
-const granted = PermissionsAndroid.request(                                                                             ///
-  PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,                                                                  ///
-  {                                                                                                                     ///
-    title: 'Location permission is required for WiFi connections',                                                      ///
-    message:                                                                                                            ///
-    'This app needs location permission as this is required  ' +                                                        ///
-    'to scan for wifi networks.',                                                                                       ///
-    buttonNegative: 'DENY',                                                                                             ///
-    buttonPositive: 'ALLOW',                                                                                            ///
-  },                                                                                                                    ///
-);                                                                                                                      ///
-if (granted === PermissionsAndroid.RESULTS.GRANTED) {                                                                   ///
-  // You can now use react-native-wifi-reborn                                                                           ///
-} else {                                                                                                                ///
-  // Permission denied                                                                                                  ///
-}                                                                                                                       ///
-export const requestLocationPermission = () => new Promise(async(resolve, reject) => {                                  ///
-  if (Platform.OS == 'android') {                                                                                       ///
-    try {                                                                                                               ///
-      // const granted = await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.ACCESS_COARSE_LOCATION,        ///
-      const granted = await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,             ///
-      )                                                                                                                 ///
-      if (granted === PermissionsAndroid.RESULTS.GRANTED) {                                                             ///
-        console.log('Access Location Permission Succuess');                                                             ///
-        resolve(true)                                                                                                   ///
-      } else {                                                                                                          ///
-        console.log('Access Location Permission Fail');                                                                 ///
-        resolve(false)                                                                                                  ///
-      }                                                                                                                 ///
-    } catch (err) {                                                                                                     ///
-      console.log('Permission Error');                                                                                  ///
-      resolve(false)                                                                                                    ///
-    }                                                                                                                   ///
-  } else {                                                                                                              ///
-    resolve(true)                                                                                                       ///
-  }                                                                                                                     ///
-})                                                                                                                      ///
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+import checkFirstLaunch from './test1/checkFirstLaunch';
 
 // 회전각 측정
 export const calculateAngle = (acc, gyr, angleTime, beforeTotalAngle) => new Promise((resolve) => {
@@ -147,19 +109,79 @@ export class Collect extends Component {
       },
       isRecording: false,
       realm: null,
+      isFirstLaunch: false,
     };
   }
 
   // componentWillMount(){
   // }
-  // realm.writeCopyTo('/mnt/sdcard/Android/data/com.project_data/files/default.realm');
 
-  componentDidMount(){
-    // 앱 재실행마다 데이터 초기화
-    // Realm.deleteFile({schema:[AccSchema,MagSchema,GyroSchema,XyzSchema,BeaconSchema,BeaconDataSchema,WifiSchema,WifiDataSchema]});
+  // realm.writeCopyTo('/mnt/sdcard/Android/data/com.project_data/files/default.realm');  //realm db 추출
+
   
-    // console.log(Realm.defaultPath);
-    // Realm.open({schema:[AccSchema,XyzSchema]})
+  async componentDidMount() {
+    // 앱 실행 시 데이터 초기화
+    // Realm.deleteFile({schema:[AccSchema,MagSchema,GyroSchema,XyzSchema,BeaconSchema,BeaconDataSchema,WifiSchema,WifiDataSchema]});    
+
+    //앱 최초 실행 관련
+    const isFirstLaunch = await checkFirstLaunch();
+    console.log('[App() check]: ' + JSON.stringify(isFirstLaunch));
+    if(isFirstLaunch){
+      // 안드로이드 권한 관련 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
+      if (Platform.OS === 'android') {                                                                                                  ///
+        const granted = PermissionsAndroid.requestMultiple(                                                                             ///
+          [PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE,                                                                       ///
+          PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,                                                                          ///
+          PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,                                                                                  ///
+          PermissionsAndroid.PERMISSIONS.CAMERA]                                                                                        ///
+        ).then((result) => {                                                                                                            ///
+          if (result['android.permission.WRITE_EXTERNAL_STORAGE'] === 'granted'                                                         ///
+          && result['android.permission.ACCESS_FINE_LOCATION'] === 'granted'                                                            ///
+          && result['android.permission.RECORD_AUDIO'] === 'granted'                                                                    ///
+          && result['android.permission.CAMERA'] === 'granted')                                                                         ///
+          {                                                                                                                             ///
+            let permissionAllowed = new Date().getTime();                                                                               ///
+            alert(moment(permissionAllowed).format('YYYY년 MM월 DD일 HH시 mm분 \n\n 모든 권한이 허락되었습니다. 앱 사용이 가능합니다.'));    ///
+          }                                                                                                                             ///
+          else                                                                                                                          ///
+          {                                                                                                                             ///
+            let permissionDenied = [];                                                                                                  ///
+            if(result['android.permission.WRITE_EXTERNAL_STORAGE'] === 'granted'){                                                      ///
+              console.log("PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE : true");                                              ///
+            }                                                                                                                           ///
+            else{                                                                                                                       ///
+              permissionDenied.push('저장소');                                                                                           ///
+              console.log("PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE : false");                                             ///
+            }                                                                                                                           ///
+            if(result['android.permission.ACCESS_FINE_LOCATION'] === 'granted'){                                                        ///
+              console.log("PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION : true");                                                ///
+            }                                                                                                                           ///
+            else{                                                                                                                       ///
+              permissionDenied.push('위치');                                                                                            ///
+              console.log("PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION : false");                                               ///
+            }                                                                                                                           ///
+            if(result['android.permission.RECORD_AUDIO'] === 'granted'){                                                                ///
+              console.log("PermissionsAndroid.PERMISSIONS.RECORD_AUDIO : true");                                                        ///
+            }                                                                                                                           ///
+            else{                                                                                                                       ///
+              permissionDenied.push('마이크');                                                                                           ///
+              console.log("PermissionsAndroid.PERMISSIONS.RECORD_AUDIO : false");                                                       ///
+            }                                                                                                                           ///
+            if(result['android.permission.CAMERA'] === 'granted'){                                                                      ///
+              console.log("PermissionsAndroid.PERMISSIONS.CAMERA : true");                                                              ///
+            }                                                                                                                           ///
+            else{                                                                                                                       ///
+              permissionDenied.push('카메라');                                                                                           ///
+              console.log("PermissionsAndroid.PERMISSIONS.CAMERA : false");                                                             ///
+            }                                                                                                                           ///
+            alert(String(permissionDenied) + ' 권한\n이 불허되었습니다. \n\n어플이 정상 작동하지 않을 수 있습니다. \n\n정상 작동을 위해서 권한을 부여해주시기 바랍니다. \n\n앱 -> 앱 정보 -> 권한 -> 권한 부여\n\n');
+          }                                                                                                                             ///
+        });                                                                                                                             ///
+      }                                                                                                                                 ///
+      /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+      console.log( ' [App()] : This is the first Launch.'+ isFirstLaunch.toString() );
+      this.setState({isFirstLaunch: true});
+    }
   }
 
   checkData(){
@@ -194,7 +216,7 @@ export class Collect extends Component {
   }
 
   checkSensor(){
-    // 센서 측정 간격 500ms
+    // 센서 측정 간격 250ms
     setUpdateIntervalForType(SensorTypes.accelerometer,250);
     setUpdateIntervalForType(SensorTypes.magnetometer,250);
     setUpdateIntervalForType(SensorTypes.gyroscope,250);
@@ -410,7 +432,7 @@ export class Collect extends Component {
     .createFile(pathToWrite, csvString, 'utf8')
     .then(() => {
       console.log(`csv file create complete! :Sorted_${realName[0]}.csv`);
-      alert(`csv file create complete! :Sorted_${realName[0]}.csv`);
+      alert(`csv file create complete!\n\nSorted_${realName[0]}.csv\n`);
     })
     .catch(error => console.log(error),alert("Error : file already exist!"));
   }
@@ -482,7 +504,7 @@ export class Collect extends Component {
     return afterSortData;
   }
   
-  // txt로 출력할 데이터 (추후에 사용 위해 만들어놓음)
+  // txt로 출력할 데이터
   forTxt = (data) => {
     let datatemp = data.split('\n');
     removedUselessData = JSON.stringify(datatemp);
@@ -508,7 +530,7 @@ export class Collect extends Component {
       .createFile(pathToWrite, csvString, 'utf8')
       .then(() => {
         console.log(`txt file create complete! :${realName[0]}.txt`);
-        alert(`txt file create complete! :${realName[0]}.txt`);
+        alert(`txt file create complete!\n\n${realName[0]}.txt\n`);
       })
       .catch(error => console.log(error),alert("Error : file already exist!"));
     }
@@ -677,6 +699,20 @@ export class Collect extends Component {
       realm.close();
     })
   }
+////////////////////// 들여쓰기 해야함
+  DataInfo () {
+    Realm.open({schema:[PastNumberSchema,SaveSchema,CollectedDataDataSchema,AccSchema,MagSchema,GyroSchema,XyzSchema,BeaconSchema,BeaconDataSchema,WifiSchema,WifiDataSchema]})
+    .then(realm => {
+      realm.write(() => {
+        alert(
+          "movie name :\n" + realm.objects('Save')[realm.objects('Save').length-1].recordName + "\n\n" + 
+          "record start time :\n" + realm.objects('Save')[realm.objects('Save').length-1].recordStart + "\n\n" + 
+          "record end time :\n" + realm.objects('Save')[realm.objects('Save').length-1].recordEnd + "\n\n" + 
+          "run time :\n" + (moment(realm.objects('Save')[realm.objects('Save').length-1].recordEnd) - moment(realm.objects('Save')[realm.objects('Save').length-1].recordStart))/1000 + "sec\n"
+          );
+        })
+      realm.close();
+    })  }
 
   renderCamera() {
     return (
@@ -691,18 +727,6 @@ export class Collect extends Component {
         autoFocus={this.state.autoFocus}
         whiteBalance={this.state.whiteBalance}
         ratio={this.state.ratio}
-        androidCameraPermissionOptions={{
-          title: 'Permission to use camera',
-          message: 'We need your permission to use your camera',
-          buttonPositive: 'Ok',
-          buttonNegative: 'Cancel',
-        }}
-        androidRecordAudioPermissionOptions={{
-          title: 'Permission to use audio recording',
-          message: 'We need your permission to use your audio',
-          buttonPositive: 'Ok',
-          buttonNegative: 'Cancel',
-        }}
       >
         <View
           style={{

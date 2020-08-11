@@ -32,48 +32,52 @@ function HomeScreen({ navigation }) {
       onPress={() => navigation.navigate('Collect Data')} 
       >
       <Text style={styles.buttonText}> 
-    Collect Data 
+      Collect Data 
       </Text>
-    </TouchableOpacity>
+      </TouchableOpacity>
 
-    <TouchableOpacity
-      style={[styles.menuButton, { 
-        flex: 1, 
-        alignSelf: 'center',
-        backgroundColor: '#01DFD7',
-      }]}
-      onPress={() => collectClass.extractSortedFile()} 
-      >
-      <Text style={styles.buttonText}> 
-      Extract sorted data
-      </Text>
-    </TouchableOpacity>
+      <TouchableOpacity
+        style={[styles.menuButton, { 
+          flex: 1, 
+          alignSelf: 'center',
+          backgroundColor: '#01DFD7',
+        }]}
+        onPress={() => navigation.navigate('Extract page')} 
+        >
+        <Text style={styles.buttonText}> 
+        Extract page
+        </Text>
+      </TouchableOpacity>
 
-    <TouchableOpacity
-      style={[styles.menuButton, { 
-        flex: 1, 
-        alignSelf: 'center',
-        backgroundColor: '#01DFD7',
-      }]}
-      onPress={() => collectClass.extractTxtFile()} 
-      >
-      <Text style={styles.buttonText}> 
-      Extract txt file
-      </Text>
-    </TouchableOpacity>
-    <View style={styles.bottom}>
-    </View> 
+      <TouchableOpacity
+        style={[styles.menuButton, { 
+          flex: 1, 
+          alignSelf: 'center',
+          backgroundColor: '#01DFD7',
+        }]}
+        onPress={() => navigation.navigate('Temp')} 
+        >
+        <Text style={styles.buttonText}> 
+        Temp
+        </Text>
+      </TouchableOpacity>
+      <View style={styles.bottom}>
+      </View> 
     </View> 
   );
 }
 
-function CollectData({ navigation }) {
+function CollectData() {
   return (
       <Collect/>
   );
 }
 
-function ExtractSortedData() {
+function DataInfo() {
+  collectClass.DataInfo();
+}
+
+function ExtractSortedFile() {
   collectClass.extractSortedFile();
 }
 
@@ -87,6 +91,86 @@ function Temp({ navigation }) {
     <Text style={styles.content}>
       This page will be updated soon.
     </Text>
+    </View>
+  );
+}
+
+function Extract() {
+  return (
+    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#000000' }}>
+      <View style={{ flex: 0.2, alignItems: 'center', justifyContent: 'center', backgroundColor: '#000000' }}>
+      <Text style = {styles.warningText}>
+      {"\n"}
+      {"\n"}
+      &nbsp; 각 기능에 대해 생성되는 파일은 가장 최근에 수집한 영상 데이터로 생성됩니다. 
+      {"\n"}
+      {"\n"}
+      &nbsp; 최근 영상을 삭제했어도 그 데이터로 진행되는 점 유의해주시기 바랍니다.
+      {"\n"}
+      {"\n"}
+      </Text>
+      </View>
+
+      <View style={{ flex: 0.8, alignItems: 'center', justifyContent: 'center', backgroundColor: '#000000' }}>
+      
+        <View style={{ flex: 1.5, alignItems: 'center', justifyContent: 'center', backgroundColor: '#000000' }}>
+        </View>
+        <Text style = {styles.menuText}>
+        -    Menu    -
+        {"\n"}
+        </Text>
+
+        <View style={{ flex: 0.1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#000000' }}>
+        </View>
+
+        <TouchableOpacity
+          style={[styles.extractButton, { 
+            flex: 1, 
+            alignSelf: 'center',
+            backgroundColor: '#01DFD7',
+          }]}
+          onPress={() => DataInfo()} 
+          >
+
+          <Text style={styles.buttonText}> 
+          Current data info
+          </Text>
+        </TouchableOpacity>
+
+
+        <TouchableOpacity
+          style={[styles.extractButton, { 
+            flex: 1, 
+            alignSelf: 'center',
+            backgroundColor: '#01DFD7',
+          }]}
+          onPress={() => ExtractSortedFile()} 
+          >
+
+          <Text style={styles.buttonText}> 
+          Extract sorted data
+          </Text>
+        </TouchableOpacity>
+    
+
+        <TouchableOpacity
+          style={[styles.extractButton, { 
+            flex: 1, 
+            alignSelf: 'center',
+            backgroundColor: '#01DFD7',
+          }]}
+          onPress={() => ExtractTxtFile()} 
+          >
+        
+          <Text style={styles.buttonText}> 
+          Extract txt file
+          </Text>
+        </TouchableOpacity>
+
+        <View style={{ flex: 1.4, alignItems: 'center', justifyContent: 'center', backgroundColor: '#000000' }}>
+        </View>
+
+      </View>
     </View>
   );
 }
@@ -105,8 +189,8 @@ function MyStack() {
       }}>
       <Stack.Screen name=" " component={HomeScreen} />
       <Stack.Screen name="Collect Data" component={CollectData} />
-      <Stack.Screen name="Extract sorted data" component={ExtractSortedData} />
-      <Stack.Screen name="Extract txt file" component={ExtractTxtFile} />
+      <Stack.Screen name="Extract page" component={Extract} />
+      <Stack.Screen name="Temp" component={Temp} />
     </Stack.Navigator>
   );
 }
@@ -149,6 +233,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  extractButton: {
+    flex: 1,
+    height: 20,
+    width: 330,
+    marginHorizontal: 2,
+    marginBottom: 5,
+    marginTop: 5,
+    borderRadius: 26,
+    borderColor: '#000000',
+    borderWidth: 6,
+    padding: 5,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   buttonText: {
     color: 'white',
     fontSize: 21,
@@ -164,5 +262,18 @@ const styles = StyleSheet.create({
     color: '#01DFD7',
     fontSize: 40,
     fontWeight: 'bold',
-  }
+  },
+  warningText:{
+    width: 350,
+    fontSize: 15,
+    fontWeight: 'bold',
+    color: '#01DFD7',
+  },
+  menuText:{
+    width: 350,
+    fontSize: 23,
+    textAlign: 'center',
+    fontWeight: 'bold',
+    color: '#01DFD7',
+  },
 });
