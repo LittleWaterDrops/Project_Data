@@ -32,8 +32,8 @@ import {
   BeaconDataSchema,
   WifiSchema,
   WifiDataSchema,
-} from './test1/schema.js'
-import Beacons from 'react-native-beacons-manager'
+} from './test1/schema.js';
+import Beacons from 'react-native-beacons-manager';
 import wifi from 'react-native-android-wifi';
 import CameraRoll from "@react-native-community/cameraroll";
 import moment from 'moment';
@@ -61,7 +61,6 @@ export const calculateAngle = (acc, gyr, angleTime, beforeTotalAngle) => new Pro
   resolve({
     degree: afterTotalAngle,
   });
-
 })
 
 // 비콘 identifier 관련
