@@ -3,8 +3,6 @@ import React, {
 } from 'react';
 import {
   DeviceEventEmitter,
-  PermissionsAndroid,
-  Platform,
   StyleSheet,
   Text,
   View,
@@ -39,7 +37,6 @@ import CameraRoll from "@react-native-community/cameraroll";
 import moment from 'moment';
 import Realm from 'realm';
 import RNFetchBlob from 'react-native-fetch-blob';
-import checkFirstLaunch from './test1/checkFirstLaunch';
 
 // 회전각 측정
 export const calculateAngle = (acc, gyr, angleTime, beforeTotalAngle) => new Promise((resolve) => {
@@ -108,7 +105,6 @@ export class Collect extends Component {
       },
       isRecording: false,
       realm: null,
-      isFirstLaunch: false,
     };
   }
 
@@ -118,71 +114,7 @@ export class Collect extends Component {
   // realm.writeCopyTo('/mnt/sdcard/Android/data/com.project_data/files/default.realm');  //realm db 추출
 
   
-  async componentDidMount() {
-    // 앱 실행 시 데이터 초기화
-    // Realm.deleteFile({schema:[AccSchema,MagSchema,GyroSchema,XyzSchema,BeaconSchema,BeaconDataSchema,WifiSchema,WifiDataSchema]});    
-
-    //앱 최초 실행 관련
-    const isFirstLaunch = await checkFirstLaunch();
-    console.log('Is this first launch? : ' + JSON.stringify(isFirstLaunch));
-    if(isFirstLaunch){
-      console.log( ' This is first launch.'+ isFirstLaunch.toString() );
-
-      // 안드로이드 권한 관련 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
-      if (Platform.OS === 'android') {                                                                                                  ///
-        const granted = PermissionsAndroid.requestMultiple(                                                                             ///
-          [PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE,                                                                       ///
-          PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,                                                                          ///
-          PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,                                                                                  ///
-          PermissionsAndroid.PERMISSIONS.CAMERA]                                                                                        ///
-        ).then((result) => {                                                                                                            ///
-          if (result['android.permission.WRITE_EXTERNAL_STORAGE'] === 'granted'                                                         ///
-          && result['android.permission.ACCESS_FINE_LOCATION'] === 'granted'                                                            ///
-          && result['android.permission.RECORD_AUDIO'] === 'granted'                                                                    ///
-          && result['android.permission.CAMERA'] === 'granted')                                                                         ///
-          {                                                                                                                             ///
-            let permissionAllowed = new Date().getTime();                                                                               ///
-            alert(moment(permissionAllowed).format('YYYY년 MM월 DD일 HH시 mm분 \n\n 모든 권한이 허락되었습니다. 앱 사용이 가능합니다.'));    ///
-          }                                                                                                                             ///
-          else                                                                                                                          ///
-          {                                                                                                                             ///
-            let permissionDenied = [];                                                                                                  ///
-            if(result['android.permission.WRITE_EXTERNAL_STORAGE'] === 'granted'){                                                      ///
-              console.log("PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE : true");                                              ///
-            }                                                                                                                           ///
-            else{                                                                                                                       ///
-              permissionDenied.push('저장소');                                                                                           ///
-              console.log("PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE : false");                                             ///
-            }                                                                                                                           ///
-            if(result['android.permission.ACCESS_FINE_LOCATION'] === 'granted'){                                                        ///
-              console.log("PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION : true");                                                ///
-            }                                                                                                                           ///
-            else{                                                                                                                       ///
-              permissionDenied.push('위치');                                                                                            ///
-              console.log("PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION : false");                                               ///
-            }                                                                                                                           ///
-            if(result['android.permission.RECORD_AUDIO'] === 'granted'){                                                                ///
-              console.log("PermissionsAndroid.PERMISSIONS.RECORD_AUDIO : true");                                                        ///
-            }                                                                                                                           ///
-            else{                                                                                                                       ///
-              permissionDenied.push('마이크');                                                                                           ///
-              console.log("PermissionsAndroid.PERMISSIONS.RECORD_AUDIO : false");                                                       ///
-            }                                                                                                                           ///
-            if(result['android.permission.CAMERA'] === 'granted'){                                                                      ///
-              console.log("PermissionsAndroid.PERMISSIONS.CAMERA : true");                                                              ///
-            }                                                                                                                           ///
-            else{                                                                                                                       ///
-              permissionDenied.push('카메라');                                                                                           ///
-              console.log("PermissionsAndroid.PERMISSIONS.CAMERA : false");                                                             ///
-            }                                                                                                                           ///
-            alert(String(permissionDenied) + ' 권한\n이 불허되었습니다. \n\n어플이 정상 작동하지 않을 수 있습니다. \n\n정상 작동을 위해서 권한을 부여해주시기 바랍니다. \n\n앱 -> 앱 정보 -> 권한 -> 권한 부여\n\n');
-          }                                                                                                                             ///
-        });                                                                                                                             ///
-      }                                                                                                                                 ///
-      /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-      this.setState({isFirstLaunch: true});
-    }
-  }
+  
 
   checkData(){
     // 과거 데이터 길이 확인

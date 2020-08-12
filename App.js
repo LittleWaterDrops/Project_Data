@@ -1,6 +1,7 @@
 import 'react-native-gesture-handler';
-import React, { 
-  Component
+import React,{
+  useState, 
+  useEffect,
 } from 'react';
 import {
     StyleSheet,
@@ -12,7 +13,8 @@ import SplashScreen from 'react-native-splash-screen';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import collectClass, {Collect} from './Collect';
-
+import checkFirstLaunch from './test1/checkFirstLaunch';
+import askPermission from './test1/askPermissions';
 function HomeScreen({ navigation }) {
   return (
   
@@ -196,6 +198,26 @@ function MyStack() {
 }
 
 export default function App() {
+  // 앱 실행 시 데이터 초기화
+  // Realm.deleteFile({schema:[AccSchema,MagSchema,GyroSchema,XyzSchema,BeaconSchema,BeaconDataSchema,WifiSchema,WifiDataSchema]});
+
+  //앱 최초 실행 관련  
+  const[isFirstLaunch,setIsFirstLaunch]=useState(false);
+  
+  async function getFirstLaunch () {
+    const FirstLaunch = await checkFirstLaunch();
+    console.log('Is this first launch? : ' + JSON.stringify(FirstLaunch));
+
+    if(FirstLaunch){
+      askPermission();
+      setIsFirstLaunch(true);
+    }
+  }
+
+  useEffect(() => {
+    getFirstLaunch();
+  },[]);      
+
   return (
     <NavigationContainer>
       <MyStack />
