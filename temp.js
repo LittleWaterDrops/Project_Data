@@ -1,3 +1,4 @@
+/////////////////////ble 관련 코드가 들어가있음/////////////////
 import React, { 
   Component
 } from 'react';
